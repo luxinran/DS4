@@ -1,0 +1,30 @@
+syntax = "proto3";
+
+option go_package = "https://github.com/LiZi-77/Assignment4/grpc";
+
+package proto;
+
+// compile command:
+//protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out= 
+//--go-grpc_opt=paths=source_relative ./proto/interface.proto
+
+
+service Group3
+{
+    rpc Request(Info) returns (Empty);
+    rpc Reply(Id) returns (Empty);
+}
+
+message Info {
+    int32 id = 1;
+    uint64 lamport = 2;
+}
+
+message Id {
+    int32 id = 1;
+}
+
+message Empty {
+    
+}
+
