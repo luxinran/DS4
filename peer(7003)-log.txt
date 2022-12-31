@@ -1,3 +1,0 @@
-2022/11/15 22:19:37 Attempting dial: 7000
-2022/11/15 22:19:37 Attempting dial: 7001
-2022/11/15 22:19:37 Attempting dial: 7002
