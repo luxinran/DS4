@@ -9,7 +9,7 @@ package proto;
 //--go-grpc_opt=paths=source_relative ./proto/interface.proto
 
 
-service Group3
+service RA
 {
     rpc Request(Info) returns (Empty);
     rpc Reply(Id) returns (Empty);

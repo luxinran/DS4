@@ -12,7 +12,7 @@ import (
 	"sync"
 	"time"
 
-	Group3 "https://github.com/luxinran/DS4"
+	RA "github.com/luxinran/DS4/grpc"
 	"google.golang.org/grpc"
 )
 
@@ -30,22 +30,22 @@ type msg struct {
 }
 
 type node struct {
-	Group3.UnimplementedGroup3AndAgrawalaServer
-	id    int32
-	mutex sync.Mutex
+	RA.UnimplementedRAServer
+	id      int32
+	mutex   sync.Mutex
 	replies uint8
 	// channel used to signal that we have entered the critical section
-	held chan bool
+	held    chan bool
 	state   uint8
 	lamport uint64
 	// clients is a map of all clients we have dialed, and their respective gRPC client
-	empty Group3.Empty
+	empty RA.Empty
 	// idmsg is used to send our id to other peers
-	idmsg Group3.Id
+	idmsg RA.Id
 	// queue of messages to be sent
-	queue []msg
+	queue   []msg
 	reply   chan bool
-	clients map[int32]Group3.Group3AndAgrawalaClient
+	clients map[int32]RA.RAClient
 	ctx     context.Context
 }
 
@@ -59,14 +59,14 @@ func main() {
 	// create a new node
 	_n := &node{
 		id:      _port,
-		clients: make(map[int32]Group3.Group3AndAgrawalaClient),
+		clients: make(map[int32]RA.RAClient),
 		replies: 0,
 		held:    make(chan bool),
 		ctx:     ctx,
 		state:   RELEASED,
 		lamport: 1,
-		empty:   Group3.Empty{},
-		idmsg:   Group3.Id{Id: _port},
+		empty:   RA.Empty{},
+		idmsg:   RA.Id{Id: _port},
 		reply:   make(chan bool),
 	}
 
@@ -79,7 +79,7 @@ func main() {
 	defer logfile.Close()
 
 	grpcServer := grpc.NewServer()
-	Group3.RegisterGroup3AndAgrawalaServer(grpcServer, _n)
+	RA.RegisterRAServer(grpcServer, _n)
 
 	// connect to all other nodes
 	go func() {
@@ -101,7 +101,7 @@ func main() {
 			log.Fatalf("Dial failed: %s", err)
 		}
 		defer conn.Close()
-		_c := Group3.NewGroup3AndAgrawalaClient(conn)
+		_c := RA.NewRAClient(conn)
 		_n.clients[port] = _c
 	}
 
@@ -147,15 +147,15 @@ func main() {
 }
 
 // Request is called by other nodes to request access to the critical section
-func (_n *node) Request(ctx context.Context, req *Group3.Info) (*Group3.Empty, error) {
+func (_n *node) Request(ctx context.Context, req *RA.Info) (*RA.Empty, error) {
 	_n.mutex.Lock()
 
 	if _n.state == WANTED {
-		if (_n.lamport < req.Lamport ||  _n.id < req.Id){
+		if _n.lamport < req.Lamport || _n.id < req.Id {
 			_n.queue = append(_n.queue, msg{id: req.Id, lamport: req.Lamport})
 		}
 	} else if _n.state == HELD {
-			_n.queue = append(_n.queue, msg{id: req.Id, lamport: req.Lamport})
+		_n.queue = append(_n.queue, msg{id: req.Id, lamport: req.Lamport})
 	} else {
 		if req.Lamport > _n.lamport {
 			_n.lamport = req.Lamport
@@ -171,7 +171,7 @@ func (_n *node) Request(ctx context.Context, req *Group3.Info) (*Group3.Empty, e
 }
 
 // Reply is called by other nodes to reply to our request
-func (_n *node) Reply(ctx context.Context, req *Group3.Id) (*Group3.Empty, error) {
+func (_n *node) Reply(ctx context.Context, req *RA.Id) (*RA.Empty, error) {
 	_n.mutex.Lock()
 	_n.replies++
 	if _n.replies >= 3 {
@@ -189,7 +189,7 @@ func (_n *node) Reply(ctx context.Context, req *Group3.Id) (*Group3.Empty, error
 // enter is called to enter the critical section
 func (_n *node) enter() {
 	log.Printf("Enter | Seeking critical section access")
-	info := &Group3.Info{Id: _n.id, Lamport: _n.lamport}
+	info := &RA.Info{Id: _n.id, Lamport: _n.lamport}
 	for id, client := range _n.clients {
 		_, err := client.Request(_n.ctx, info)
 		if err != nil {
