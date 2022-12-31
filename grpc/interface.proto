@@ -1,8 +1,8 @@
 syntax = "proto3";
 
-option go_package = "https://github.com/luxinran/DS4;RA";
+option go_package = "https://github.com/luxinran/DS4/grpc";
 
-package proto;
+package grpc;
 
 // compile command:
 //protoc --go_out=. --go_opt=paths=source_relative --go-grpc_out= 

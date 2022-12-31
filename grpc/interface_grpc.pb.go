@@ -4,7 +4,7 @@
 // - protoc             v3.11.4
 // source: interface.proto
 
-package RA
+package grpc
 
 import (
 	context "context"
@@ -36,7 +36,7 @@ func NewRAClient(cc grpc.ClientConnInterface) RAClient {
 
 func (c *rAClient) Request(ctx context.Context, in *Info, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/proto.RA/Request", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpc.RA/Request", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -45,7 +45,7 @@ func (c *rAClient) Request(ctx context.Context, in *Info, opts ...grpc.CallOptio
 
 func (c *rAClient) Reply(ctx context.Context, in *Id, opts ...grpc.CallOption) (*Empty, error) {
 	out := new(Empty)
-	err := c.cc.Invoke(ctx, "/proto.RA/Reply", in, out, opts...)
+	err := c.cc.Invoke(ctx, "/grpc.RA/Reply", in, out, opts...)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func _RA_Request_Handler(srv interface{}, ctx context.Context, dec func(interfac
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.RA/Request",
+		FullMethod: "/grpc.RA/Request",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RAServer).Request(ctx, req.(*Info))
@@ -112,7 +112,7 @@ func _RA_Reply_Handler(srv interface{}, ctx context.Context, dec func(interface{
 	}
 	info := &grpc.UnaryServerInfo{
 		Server:     srv,
-		FullMethod: "/proto.RA/Reply",
+		FullMethod: "/grpc.RA/Reply",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(RAServer).Reply(ctx, req.(*Id))
@@ -124,7 +124,7 @@ func _RA_Reply_Handler(srv interface{}, ctx context.Context, dec func(interface{
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var RA_ServiceDesc = grpc.ServiceDesc{
-	ServiceName: "proto.RA",
+	ServiceName: "grpc.RA",
 	HandlerType: (*RAServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
