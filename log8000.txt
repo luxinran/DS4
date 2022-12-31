@@ -1,120 +1,60 @@
-2022/12/31 14:05:14 Dialing to 8001
-2022/12/31 14:05:23 Dialing to 8002
-2022/12/31 14:05:33 Dialing done
-2022/12/31 14:05:36 Request | 8002 is allowed
-2022/12/31 14:05:41 Enter | Requesting
-2022/12/31 14:05:41 Enter | Requested 8001
-2022/12/31 14:05:41 Enter | Requested 8002
-2022/12/31 14:05:41 Reply | 8001 replied
-2022/12/31 14:05:41 Reply | 8002 replied
-2022/12/31 14:05:41 Entered critical section
-2022/12/31 14:05:45 Request | 8002 is waiting
-2022/12/31 14:05:46 Leaving critical section
-2022/12/31 14:05:46 Replying to 8002
-2022/12/31 14:05:52 Enter | Requesting
-2022/12/31 14:05:52 Enter | Requested 8001
-2022/12/31 14:05:52 Enter | Requested 8002
-2022/12/31 14:05:52 Reply | 8001 replied
-2022/12/31 14:05:52 Reply | 8002 replied
-2022/12/31 14:05:52 Entered critical section
-2022/12/31 14:05:53 Request | 8001 is waiting
-2022/12/31 14:05:57 Leaving critical section
-2022/12/31 14:05:57 Replying to 8001
-2022/12/31 14:05:58 Request | 8002 is allowed
-2022/12/31 14:06:00 Enter | Requesting
-2022/12/31 14:06:00 Enter | Requested 8001
-2022/12/31 14:06:00 Enter | Requested 8002
-2022/12/31 14:06:02 Reply | 8001 replied
-2022/12/31 14:06:07 Reply | 8002 replied
-2022/12/31 14:06:07 Entered critical section
-2022/12/31 14:06:08 Request | 8001 is waiting
-2022/12/31 14:06:12 Leaving critical section
-2022/12/31 14:06:12 Replying to 8001
-2022/12/31 14:06:21 Request | 8002 is allowed
-2022/12/31 14:06:22 Request | 8001 is allowed
-2022/12/31 14:06:30 Request | 8002 is allowed
-2022/12/31 14:06:41 Request | 8001 is allowed
-2022/12/31 14:06:47 Enter | Requesting
-2022/12/31 14:06:47 Enter | Requested 8001
-2022/12/31 14:06:47 Enter | Requested 8002
-2022/12/31 14:06:47 Reply | 8001 replied
-2022/12/31 14:06:47 Reply | 8002 replied
-2022/12/31 14:06:47 Entered critical section
-2022/12/31 14:06:49 Request | 8001 is waiting
-2022/12/31 14:06:52 Leaving critical section
-2022/12/31 14:06:52 Replying to 8001
-2022/12/31 14:06:53 Enter | Requesting
-2022/12/31 14:06:53 Enter | Requested 8001
-2022/12/31 14:06:53 Enter | Requested 8002
-2022/12/31 14:06:53 Reply | 8002 replied
-2022/12/31 14:06:55 Request | 8002 is waiting
-2022/12/31 14:06:57 Reply | 8001 replied
-2022/12/31 14:06:57 Entered critical section
-2022/12/31 14:07:02 Leaving critical section
-2022/12/31 14:07:02 Replying to 8002
-2022/12/31 14:07:07 Request | 8001 is allowed
-2022/12/31 14:07:08 Enter | Requesting
-2022/12/31 14:07:08 Enter | Requested 8001
-2022/12/31 14:07:08 Enter | Requested 8002
-2022/12/31 14:07:08 Reply | 8002 replied
-2022/12/31 14:07:12 Reply | 8001 replied
-2022/12/31 14:07:12 Entered critical section
-2022/12/31 14:07:17 Leaving critical section
-2022/12/31 14:07:19 Enter | Requesting
-2022/12/31 14:07:19 Enter | Requested 8001
-2022/12/31 14:07:19 Enter | Requested 8002
-2022/12/31 14:07:19 Reply | 8001 replied
-2022/12/31 14:07:19 Reply | 8002 replied
-2022/12/31 14:07:19 Entered critical section
-2022/12/31 14:07:24 Leaving critical section
-2022/12/31 14:07:25 Request | 8002 is allowed
-2022/12/31 14:07:26 Enter | Requesting
-2022/12/31 14:07:26 Enter | Requested 8001
-2022/12/31 14:07:26 Enter | Requested 8002
-2022/12/31 14:07:26 Reply | 8001 replied
-2022/12/31 14:07:28 Request | 8001 is waiting
-2022/12/31 14:07:30 Reply | 8002 replied
-2022/12/31 14:07:30 Entered critical section
-2022/12/31 14:07:31 Request | 8002 is waiting
-2022/12/31 14:07:35 Leaving critical section
-2022/12/31 14:07:35 Replying to 8001
-2022/12/31 14:07:35 Replying to 8002
-2022/12/31 14:07:48 Request | 8001 is allowed
-2022/12/31 14:07:51 Request | 8002 is allowed
-2022/12/31 14:07:55 Request | 8001 is allowed
-2022/12/31 14:07:56 Enter | Requesting
-2022/12/31 14:07:56 Enter | Requested 8001
-2022/12/31 14:07:56 Enter | Requested 8002
-2022/12/31 14:07:58 Reply | 8002 replied
-2022/12/31 14:08:03 Reply | 8001 replied
-2022/12/31 14:08:03 Entered critical section
-2022/12/31 14:08:08 Leaving critical section
-2022/12/31 14:08:09 Enter | Requesting
-2022/12/31 14:08:09 Enter | Requested 8001
-2022/12/31 14:08:09 Enter | Requested 8002
-2022/12/31 14:08:09 Reply | 8001 replied
-2022/12/31 14:08:09 Reply | 8002 replied
-2022/12/31 14:08:09 Entered critical section
-2022/12/31 14:08:14 Leaving critical section
-2022/12/31 14:08:17 Enter | Requesting
-2022/12/31 14:08:17 Enter | Requested 8001
-2022/12/31 14:08:17 Enter | Requested 8002
-2022/12/31 14:08:17 Reply | 8001 replied
-2022/12/31 14:08:17 Reply | 8002 replied
-2022/12/31 14:08:17 Entered critical section
-2022/12/31 14:08:18 Request | 8002 is waiting
-2022/12/31 14:08:22 Request | 8001 is waiting
-2022/12/31 14:08:22 Leaving critical section
-2022/12/31 14:08:22 Replying to 8002
-2022/12/31 14:08:22 Replying to 8001
-2022/12/31 14:08:24 Enter | Requesting
-2022/12/31 14:08:24 Enter | Requested 8001
-2022/12/31 14:08:24 Enter | Requested 8002
-2022/12/31 14:08:27 Reply | 8002 replied
-2022/12/31 14:08:32 Request | 8002 is waiting
-2022/12/31 14:08:32 Reply | 8001 replied
-2022/12/31 14:08:32 Entered critical section
-2022/12/31 14:08:34 Request | 8001 is waiting
-2022/12/31 14:08:37 Leaving critical section
-2022/12/31 14:08:37 Replying to 8002
-2022/12/31 14:08:37 Replying to 8001
+2022/12/31 14:32:09 Dialing to 8001
+2022/12/31 14:32:19 Dialing to 8002
+2022/12/31 14:32:22 Dialing done
+2022/12/31 14:32:33 Request- 8002 is allowed
+2022/12/31 14:32:36 Enter | Requesting
+2022/12/31 14:32:36 Enter- Requested 8001
+2022/12/31 14:32:36 Enter- Requested 8002
+2022/12/31 14:32:36 Reply- 8001 replied
+2022/12/31 14:32:37 Request- 8001 is waiting
+2022/12/31 14:32:38 Reply- 8002 replied
+2022/12/31 14:32:38 Entered critical section
+2022/12/31 14:32:41 Request- 8002 is waiting
+2022/12/31 14:32:43 Leaving critical section
+2022/12/31 14:32:43 Replying to 8001
+2022/12/31 14:32:43 Replying to 8002
+2022/12/31 14:33:03 Request- 8001 is allowed
+2022/12/31 14:33:13 Enter | Requesting
+2022/12/31 14:33:13 Enter- Requested 8002
+2022/12/31 14:33:13 Enter- Requested 8001
+2022/12/31 14:33:13 Reply- 8002 replied
+2022/12/31 14:33:13 Reply- 8001 replied
+2022/12/31 14:33:13 Entered critical section
+2022/12/31 14:33:15 Request- 8001 is waiting
+2022/12/31 14:33:18 Leaving critical section
+2022/12/31 14:33:18 Replying to 8001
+2022/12/31 14:33:22 Enter | Requesting
+2022/12/31 14:33:22 Enter- Requested 8001
+2022/12/31 14:33:22 Enter- Requested 8002
+2022/12/31 14:33:22 Reply- 8002 replied
+2022/12/31 14:33:23 Reply- 8001 replied
+2022/12/31 14:33:23 Entered critical section
+2022/12/31 14:33:28 Leaving critical section
+2022/12/31 14:33:29 Enter | Requesting
+2022/12/31 14:33:29 Enter- Requested 8001
+2022/12/31 14:33:29 Enter- Requested 8002
+2022/12/31 14:33:29 Reply- 8001 replied
+2022/12/31 14:33:29 Reply- 8002 replied
+2022/12/31 14:33:29 Entered critical section
+2022/12/31 14:33:33 Request- 8001 is waiting
+2022/12/31 14:33:33 Request- 8002 is waiting
+2022/12/31 14:33:34 Leaving critical section
+2022/12/31 14:33:34 Replying to 8001
+2022/12/31 14:33:34 Replying to 8002
+2022/12/31 14:33:40 Enter | Requesting
+2022/12/31 14:33:40 Enter- Requested 8001
+2022/12/31 14:33:40 Enter- Requested 8002
+2022/12/31 14:33:40 Reply- 8001 replied
+2022/12/31 14:33:44 Request- 8001 is waiting
+2022/12/31 14:33:44 Reply- 8002 replied
+2022/12/31 14:33:44 Entered critical section
+2022/12/31 14:33:49 Leaving critical section
+2022/12/31 14:33:49 Replying to 8001
+2022/12/31 14:33:54 Request- 8002 is allowed
+2022/12/31 14:33:55 Enter | Requesting
+2022/12/31 14:33:55 Enter- Requested 8001
+2022/12/31 14:33:55 Enter- Requested 8002
+2022/12/31 14:33:55 Reply- 8001 replied
+2022/12/31 14:33:59 Reply- 8002 replied
+2022/12/31 14:33:59 Entered critical section
+2022/12/31 14:34:01 Request- 8001 is waiting
