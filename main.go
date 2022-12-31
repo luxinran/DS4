@@ -16,14 +16,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-const VERBOSE = true
-
-const (
-	RELEASED uint8 = 0
-	WANTED         = 1
-	HELD           = 2
-)
-
 type msg struct {
 	id      int32
 	lamport uint64
@@ -31,23 +23,15 @@ type msg struct {
 
 type peer struct {
 	RA.UnimplementedRAServer
-	id    int32
-	mutex sync.Mutex
-	// max 255 other peers
+	id      int32
+	mutex   sync.Mutex
 	replies uint8
-	// fire updates when we hold the channel
-	held chan bool
-	// for 3 states, this is a waste.. however, it is neglible on the scale we are at
+	held    chan bool
 	state   uint8
 	lamport uint64
-	// some gRPC calls use empty, prevent making a new one each time
-	empty RA.Empty
-	// same as above, except for replies
-	idmsg RA.Id
-	// queued "messages" get appended here, FIFO, in actuality we just store the id of the
-	// peer instance we wish to 'gRPC.Reply' to, and the lamport timestamp for updating own lamport
-	queue []msg
-	// fire update on this channel, when we need to send messages in our queue
+	empty   RA.Empty
+	idmsg   RA.Id
+	queue   []msg
 	reply   chan bool
 	clients map[int32]RA.RAClient
 	ctx     context.Context
@@ -66,7 +50,7 @@ func main() {
 		replies: 0,
 		held:    make(chan bool),
 		ctx:     ctx,
-		state:   RELEASED,
+		state:   0,
 		lamport: 1,
 		empty:   RA.Empty{},
 		idmsg:   RA.Id{Id: ownPort},
@@ -99,9 +83,7 @@ func main() {
 		}
 
 		var conn *grpc.ClientConn
-		if VERBOSE {
-			log.Printf("Dialing to %v\n", port)
-		}
+		log.Printf("Dialing to %v\n", port)
 		conn, err := grpc.Dial(fmt.Sprintf(":%v", port), grpc.WithInsecure(), grpc.WithBlock())
 		if err != nil {
 			log.Fatalf("Could not dial to port %v: %v", port, err)
@@ -110,12 +92,8 @@ func main() {
 		c := RA.NewRAClient(conn)
 		p.clients[port] = c
 	}
-	if VERBOSE {
-		log.Printf("Dialing done\n")
-	}
-	// as seen from log message above - this is because if we do not sleep, then the first (or second) client will cause
-	// invalid control flow in the different gRPC functions on last client, since it might not have an active connection to the one dialing it yet
-	// - the simplest solution, is to just wait a little, rather than inquiring each client about whether or not it has N-clients dialed, like ourselves
+	log.Printf("Dialing done\n")
+	// sleep for 5 seconds to make sure that all clients have been connected
 	time.Sleep(5 * time.Second)
 
 	// start our queue loop, it will (when told to) - send messages that have been delayed
@@ -129,15 +107,13 @@ func main() {
 				if msg.lamport > p.lamport {
 					p.lamport = msg.lamport
 				}
-				if VERBOSE {
-					log.Printf("Replying to %v\n", msg.id)
-				}
+				log.Printf("Replying to %v\n", msg.id)
 				p.clients[msg.id].Reply(p.ctx, &p.idmsg)
 			}
 			// see previous comment, increment highest found
 			p.lamport++
 			p.queue = nil
-			p.state = RELEASED
+			p.state = 0
 			p.mutex.Unlock()
 		}
 	}()
@@ -146,7 +122,7 @@ func main() {
 	for {
 		if rand.Intn(100) == 42 {
 			p.mutex.Lock()
-			p.state = WANTED
+			p.state = 1
 			p.mutex.Unlock()
 			p.enter()
 			<-p.held
@@ -156,16 +132,14 @@ func main() {
 			log.Printf("Leaving critical section\n")
 			p.reply <- true
 		}
-		time.Sleep(50 * time.Millisecond)
+		time.Sleep(100 * time.Millisecond)
 	}
 }
 
 func (p *peer) Request(ctx context.Context, req *RA.Info) (*RA.Empty, error) {
 	p.mutex.Lock()
-	if p.state == HELD || (p.state == WANTED && p.LessThan(req.Id, req.Lamport)) {
-		if VERBOSE {
-			log.Printf("Request | %v is waiting\n", req.Id)
-		}
+	if p.state == 2 || (p.state == 1 && p.LessThan(req.Id, req.Lamport)) {
+		log.Printf("Request | %v is waiting\n", req.Id)
 		p.queue = append(p.queue, msg{id: req.Id, lamport: req.Lamport})
 	} else {
 		if req.Lamport > p.lamport {
@@ -175,9 +149,7 @@ func (p *peer) Request(ctx context.Context, req *RA.Info) (*RA.Empty, error) {
 		go func() {
 			// sleep a little, to make sure that the other clients have time to add their messages to the queue
 			time.Sleep(5 * time.Millisecond)
-			if VERBOSE {
-				log.Printf("Request | %v is allowed\n", req.Id)
-			}
+			log.Printf("Request | %v is allowed\n", req.Id)
 			p.clients[req.Id].Reply(p.ctx, &p.idmsg)
 		}()
 	}
@@ -198,13 +170,11 @@ func (p *peer) LessThan(id int32, lamport uint64) bool {
 }
 
 func (p *peer) Reply(ctx context.Context, req *RA.Id) (*RA.Empty, error) {
-	if VERBOSE {
-		log.Printf("Reply | %v replied\n", req.Id)
-	}
+	log.Printf("Reply | %v replied\n", req.Id)
 	p.mutex.Lock()
 	p.replies++
 	if p.replies >= 3-1 {
-		p.state = HELD
+		p.state = 2
 		p.replies = 0
 		p.mutex.Unlock()
 		p.held <- true
@@ -223,9 +193,7 @@ func (p *peer) enter() {
 		if err != nil {
 			log.Printf(" Enter | Failed to request from %v: %v\n", id, err)
 		}
-		if VERBOSE {
-			log.Printf("Enter | Requested %v\n", id)
-		}
+		log.Printf("Enter | Requested %v\n", id)
 	}
 }
 
