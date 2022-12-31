@@ -54,3 +54,13 @@
 2022/12/31 14:34:01 Enter- Requested 8000
 2022/12/31 14:34:01 Enter- Requested 8002
 2022/12/31 14:34:01 Reply- 8002 replied
+2022/12/31 14:34:04 Reply- 8000 replied
+2022/12/31 14:34:04 Entered critical section
+2022/12/31 14:34:09 Leaving critical section
+2022/12/31 14:34:10 Request- 8002 is allowed
+2022/12/31 14:34:10 Enter | Requesting
+2022/12/31 14:34:10 Enter- Requested 8000
+2022/12/31 14:34:10 Enter- Requested 8002
+2022/12/31 14:34:10 Reply- 8000 replied
+2022/12/31 14:34:15 Reply- 8002 replied
+2022/12/31 14:34:15 Entered critical section

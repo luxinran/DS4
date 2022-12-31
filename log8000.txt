@@ -58,3 +58,7 @@
 2022/12/31 14:33:59 Reply- 8002 replied
 2022/12/31 14:33:59 Entered critical section
 2022/12/31 14:34:01 Request- 8001 is waiting
+2022/12/31 14:34:04 Leaving critical section
+2022/12/31 14:34:04 Replying to 8001
+2022/12/31 14:34:10 Request- 8002 is allowed
+2022/12/31 14:34:10 Request- 8001 is allowed

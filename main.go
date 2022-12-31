@@ -31,7 +31,9 @@ type peerNode struct {
 	replies uint8
 	// channel to signal that we have entered the critical section
 	held chan bool
-	// state of the peer, 0 = idle, 1 = waiting, 2 = in critical section
+	// state of the peer, 0 = idle, 1 = wanted, 2 = waiting to critical section
+	// this is used to determine if we are allowed to enter the critical section
+	// or if we should wait until we are allowed to enter
 	state   uint8
 	lamport uint64
 	empty   RA.Empty
@@ -102,8 +104,8 @@ func main() {
 		node.clients[port] = client
 	}
 	log.Printf("Dialing done\n")
-	// sleep for 5 seconds to make sure that all clients have been connected
-	time.Sleep(5 * time.Second)
+	// sleep for 1 seconds to make sure that all clients have been connected
+	time.Sleep(1 * time.Second)
 
 	// start the main loop
 	// this loop will wait for a reply from a node and then reply to all nodes in the queue
@@ -128,17 +130,20 @@ func main() {
 		}
 	}()
 	// this loop will send a request to a random node every 100ms
+	// if the random number is 22, the node will enter the critical section
+	// and then leave it after 1 second
 	rand.Seed(time.Now().UnixNano() / int64(nodePort))
 	for {
-		if rand.Intn(100) == 42 {
+		// send request to random node
+		if rand.Intn(100) == 22 {
 			node.mutex.Lock()
 			node.state = 1
 			node.mutex.Unlock()
 			node.Enter()
 			<-node.held
 			log.Printf("Entered critical section\n")
-			// sleep for 5 seconds in critical section
-			time.Sleep(5 * time.Second)
+			// sleep for 1 seconds in critical section
+			time.Sleep(1 * time.Second)
 			log.Printf("Leaving critical section\n")
 			node.reply <- true
 		}
