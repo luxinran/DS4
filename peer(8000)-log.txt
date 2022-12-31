@@ -1,0 +1,3 @@
+2022/12/31 13:33:13 Attempting dial: 8001
+2022/12/31 13:33:28 Attempting dial: 8002
+2022/12/31 13:34:06 Request | Allowing 8002 to enter critical section

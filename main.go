@@ -16,7 +16,13 @@ import (
 	"google.golang.org/grpc"
 )
 
-const INITPORT int32 = 8000
+// port offset, if program is ran with option 0, then port used is offset+0
+const OFFSET int32 = 8000
+
+// if verbose is false, then programs will only print: requesting CS, joining CS, leaving CS
+// CS = critical section.
+// verbose set to false helps verifying that multiple peers are not in critical section at the same time
+const VERBOSE = true
 
 const (
 	RELEASED uint8 = 0
@@ -29,21 +35,25 @@ type msg struct {
 	lamport uint64
 }
 
-type node struct {
+type peer struct {
 	RA.UnimplementedRAServer
-	id      int32
-	mutex   sync.Mutex
+	id    int32
+	mutex sync.Mutex
+	// max 255 other peers
 	replies uint8
-	// channel used to signal that we have entered the critical section
-	held    chan bool
+	// fire updates when we hold the channel
+	held chan bool
+	// for 3 states, this is a waste.. however, it is neglible on the scale we are at
 	state   uint8
 	lamport uint64
-	// clients is a map of all clients we have dialed, and their respective gRPC client
+	// some gRPC calls use empty, prevent making a new one each time
 	empty RA.Empty
-	// idmsg is used to send our id to other peers
+	// same as above, except for replies
 	idmsg RA.Id
-	// queue of messages to be sent
-	queue   []msg
+	// queued "messages" get appended here, FIFO, in actuality we just store the id of the
+	// peer instance we wish to 'gRPC.Reply' to, and the lamport timestamp for updating own lamport
+	queue []msg
+	// fire update on this channel, when we need to send messages in our queue
 	reply   chan bool
 	clients map[int32]RA.RAClient
 	ctx     context.Context
@@ -51,14 +61,13 @@ type node struct {
 
 func main() {
 	arg1, _ := strconv.ParseInt(os.Args[1], 10, 32)
-	_port := int32(arg1) + INITPORT
+	ownPort := int32(arg1) + OFFSET
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
 
-	// create a new node
-	_n := &node{
-		id:      _port,
+	p := &peer{
+		id:      ownPort,
 		clients: make(map[int32]RA.RAClient),
 		replies: 0,
 		held:    make(chan bool),
@@ -66,150 +75,191 @@ func main() {
 		state:   RELEASED,
 		lamport: 1,
 		empty:   RA.Empty{},
-		idmsg:   RA.Id{Id: _port},
+		idmsg:   RA.Id{Id: ownPort},
 		reply:   make(chan bool),
 	}
 
-	portlist, err := net.Listen("tcp", fmt.Sprintf(":%v", _port))
+	// Create listener tcp on port ownPort
+	list, err := net.Listen("tcp", fmt.Sprintf(":%v", ownPort))
 	if err != nil {
 		log.Fatalf("Could not listen on port: %v", err)
 	}
 
-	logfile := setLog(_port)
-	defer logfile.Close()
+	f := setLog(ownPort)
+	defer f.Close()
 
 	grpcServer := grpc.NewServer()
-	RA.RegisterRAServer(grpcServer, _n)
+	RA.RegisterRAServer(grpcServer, p)
 
-	// connect to all other nodes
 	go func() {
-		if err := grpcServer.Serve(portlist); err != nil {
+		if err := grpcServer.Serve(list); err != nil {
 			log.Fatalf("Failed to serve: %v", err)
 		}
 	}()
 
-	for i := 0; i < 4; i++ {
-		port := INITPORT + int32(i)
+	for i := 0; i < 3; i++ {
+		port := OFFSET + int32(i)
 
-		if port == _port {
+		if port == ownPort {
 			continue
 		}
 
 		var conn *grpc.ClientConn
+		if VERBOSE {
+			log.Printf("Attempting dial: %v\n", port)
+		}
 		conn, err := grpc.Dial(fmt.Sprintf(":%v", port), grpc.WithInsecure(), grpc.WithBlock())
 		if err != nil {
 			log.Fatalf("Dial failed: %s", err)
 		}
 		defer conn.Close()
-		_c := RA.NewRAClient(conn)
-		_n.clients[port] = _c
+		c := RA.NewRAClient(conn)
+		p.clients[port] = c
 	}
-
+	if VERBOSE {
+		log.Printf("Connected to all clients :) Sleeping to allow them to dial to us aswell\n")
+	}
+	// as seen from log message above - this is because if we do not sleep, then the first (or second) client will cause
+	// invalid control flow in the different gRPC functions on last client, since it might not have an active connection to the one dialing it yet
+	// - the simplest solution, is to just wait a little, rather than inquiring each client about whether or not it has N-clients dialed, like ourselves
 	time.Sleep(5 * time.Second)
 
-	// start the main loop
+	// start our queue loop, it will (when told to) - send messages that have been delayed
 	go func() {
 		for {
-			<-_n.reply
-			_n.mutex.Lock()
-			for _, msg := range _n.queue {
-
-				if msg.lamport > _n.lamport {
-					_n.lamport = msg.lamport
+			// wait for update
+			<-p.reply
+			p.mutex.Lock()
+			for _, msg := range p.queue {
+				// update our lamport to the max found value in queue
+				if msg.lamport > p.lamport {
+					p.lamport = msg.lamport
 				}
-				_n.clients[msg.id].Reply(_n.ctx, &_n.idmsg)
+				if VERBOSE {
+					log.Printf("Queue | Giving permission to enter critical section to %v\n", msg.id)
+				}
+				p.clients[msg.id].Reply(p.ctx, &p.idmsg)
 			}
-
-			_n.lamport++
-			_n.queue = nil
-			_n.state = RELEASED
-			_n.mutex.Unlock()
+			// see previous comment, increment highest found
+			p.lamport++
+			p.queue = nil
+			p.state = RELEASED
+			p.mutex.Unlock()
 		}
 	}()
 
-	rand.Seed(time.Now().UnixNano() / int64(_port))
+	// not cryptographically secure, however, it does not need to be - we are only using it so that
+	// the programs dont request access at the same time :)
+	rand.Seed(time.Now().UnixNano() / int64(ownPort))
 	for {
-
+		// 1/100 chance
 		if rand.Intn(100) == 42 {
-			_n.mutex.Lock()
-			_n.state = WANTED
-			_n.mutex.Unlock()
-			_n.enter()
-
-			<-_n.held
+			p.mutex.Lock()
+			p.state = WANTED
+			p.mutex.Unlock()
+			p.enter()
+			// wait for state to be held
+			<-p.held
 			log.Printf("+ Entered critical section\n")
 			time.Sleep(5 * time.Second)
 			log.Printf("- Leaving critical section\n")
-			_n.reply <- true
+			// fire all of our queued replies, this also sets our state back to released
+			// equivalent to an exit() function :)
+			p.reply <- true
 		}
 		time.Sleep(50 * time.Millisecond)
 	}
 }
 
-// Request is called by other nodes to request access to the critical section
-func (_n *node) Request(ctx context.Context, req *RA.Info) (*RA.Empty, error) {
-	_n.mutex.Lock()
-
-	if _n.state == WANTED {
-		if _n.lamport < req.Lamport || _n.id < req.Id {
-			_n.queue = append(_n.queue, msg{id: req.Id, lamport: req.Lamport})
+func (p *peer) Request(ctx context.Context, req *RA.Info) (*RA.Empty, error) {
+	p.mutex.Lock()
+	if p.state == HELD || (p.state == WANTED && p.LessThan(req.Id, req.Lamport)) {
+		if VERBOSE {
+			log.Printf("Request | Received request from %v, appending...\n", req.Id)
 		}
-	} else if _n.state == HELD {
-		_n.queue = append(_n.queue, msg{id: req.Id, lamport: req.Lamport})
+		p.queue = append(p.queue, msg{id: req.Id, lamport: req.Lamport})
 	} else {
-		if req.Lamport > _n.lamport {
-			_n.lamport = req.Lamport
+		if req.Lamport > p.lamport {
+			p.lamport = req.Lamport
 		}
-		_n.lamport++
+		p.lamport++
+		// we need the reply to arrive later than request finishing up, which is messy
+		// reply/request could instead have been combined, and then depending on value - the peer
+		// would know whether or not a request succeeded... however, this simplifies logic, since it allows
+		// to *only* count amount of replies we've received to know whether or not we can enter critical section
 		go func() {
 			time.Sleep(10 * time.Millisecond)
-			_n.clients[req.Id].Reply(_n.ctx, &_n.idmsg)
+			if VERBOSE {
+				log.Printf("Request | Allowing %v to enter critical section\n", req.Id)
+			}
+			p.clients[req.Id].Reply(p.ctx, &p.idmsg)
 		}()
 	}
-	_n.mutex.Unlock()
-	return &_n.empty, nil
+	p.mutex.Unlock()
+	return &p.empty, nil
 }
 
-// Reply is called by other nodes to reply to our request
-func (_n *node) Reply(ctx context.Context, req *RA.Id) (*RA.Empty, error) {
-	_n.mutex.Lock()
-	_n.replies++
-	if _n.replies >= 3 {
-		_n.state = HELD
-		_n.replies = 0
-		_n.mutex.Unlock()
-		_n.held <- true
+func (p *peer) LessThan(id int32, lamport uint64) bool {
+	if p.lamport < lamport {
+		return true
+	} else if p.lamport > lamport {
+		return false
+	}
+	// if lamport is the same, then go by id instead
+	if p.id < id {
+		return true
+	}
+	return false
+}
+
+func (p *peer) Reply(ctx context.Context, req *RA.Id) (*RA.Empty, error) {
+	if VERBOSE {
+		log.Printf("Reply | Got reply from id %v\n", req.Id)
+	}
+	p.mutex.Lock()
+	p.replies++
+	if p.replies >= 3-1 {
+		p.state = HELD
+		p.replies = 0
+		p.mutex.Unlock()
+		// this cannot deadlock if no-one is malicious. if however, someone calls reply when we havent requested it
+		// then this will cause issues, since program will not be awaiting on this channel
+		p.held <- true
 	} else {
-		_n.mutex.Unlock()
+		p.mutex.Unlock()
 	}
 
-	return &_n.empty, nil
+	return &p.empty, nil
 }
 
-// enter is called to enter the critical section
-func (_n *node) enter() {
+func (p *peer) enter() {
 	log.Printf("Enter | Seeking critical section access")
-	info := &RA.Info{Id: _n.id, Lamport: _n.lamport}
-	for id, client := range _n.clients {
-		_, err := client.Request(_n.ctx, info)
+	info := &RA.Info{Id: p.id, Lamport: p.lamport}
+	for id, client := range p.clients {
+		_, err := client.Request(p.ctx, info)
 		if err != nil {
 			log.Printf("something went wrong with id %v\n", id)
 		}
+		if VERBOSE {
+			log.Printf("Enter | Requested from %v\n", id)
+		}
 	}
 }
 
-// setLog sets up the log file
 func setLog(port int32) *os.File {
-	filename := fmt.Sprintf("node(%v)-log.txt", port)
+	// Clears the log.txt file when a new server is started
+	filename := fmt.Sprintf("peer(%v)-log.txt", port)
 	if err := os.Truncate(filename, 0); err != nil {
 		log.Printf("Failed to truncate: %v\n", err)
 	}
 
-	logfile, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	// This connects to the log file/changes the output of the log informaiton to the log.txt file.
+	f, err := os.OpenFile(filename, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
 	if err != nil {
 		log.Fatalf("Error opening file: %v", err)
 	}
-	mw := io.MultiWriter(os.Stdout, logfile)
+	// print to both file and console
+	mw := io.MultiWriter(os.Stdout, f)
 	log.SetOutput(mw)
-	return logfile
+	return f
 }

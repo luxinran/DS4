@@ -1,0 +1,8 @@
+2022/12/31 13:33:24 Attempting dial: 8000
+2022/12/31 13:33:24 Attempting dial: 8002
+2022/12/31 13:34:05 Connected to all clients :) Sleeping to allow them to dial to us aswell
+2022/12/31 13:34:06 Request | Allowing 8002 to enter critical section
+2022/12/31 13:34:14 Enter | Seeking critical section access
+2022/12/31 13:34:14 something went wrong with id 8000
+2022/12/31 13:34:14 Enter | Requested from 8000
+2022/12/31 13:34:14 Enter | Requested from 8002
