@@ -1,6 +1,6 @@
 syntax = "proto3";
 
-option go_package = "https://github.com/LiZi-77/Assignment4/grpc";
+option go_package = "https://github.com/luxinran/DS4;RA";
 
 package proto;
 
