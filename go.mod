@@ -1,4 +1,4 @@
-module github.com/LocatedInSpace/Distributed-Mutual-Exclusion
+module github.com/luxinran/DS4
 
 go 1.19
 
