@@ -1,0 +1,34 @@
+2022/12/31 13:49:12 Dialing to 8000
+2022/12/31 13:49:12 Dialing to 8002
+2022/12/31 13:49:18 Dialing done
+2022/12/31 13:49:27 Request | 8000 is allowed
+2022/12/31 13:49:28 Enter | Requesting
+2022/12/31 13:49:28 Enter | Requested 8000
+2022/12/31 13:49:28 Enter | Requested 8002
+2022/12/31 13:49:28 Reply | 8002 replied
+2022/12/31 13:49:30 Request | 8002 is waiting
+2022/12/31 13:49:32 Reply | 8000 replied
+2022/12/31 13:49:32 + Entered critical section
+2022/12/31 13:49:37 - Leaving critical section
+2022/12/31 13:49:37 Replying to 8002
+2022/12/31 13:49:37 Enter | Requesting
+2022/12/31 13:49:37 Enter | Requested 8000
+2022/12/31 13:49:37 Enter | Requested 8002
+2022/12/31 13:49:37 Reply | 8000 replied
+2022/12/31 13:49:40 Request | 8000 is waiting
+2022/12/31 13:49:42 Reply | 8002 replied
+2022/12/31 13:49:42 + Entered critical section
+2022/12/31 13:49:44 Request | 8002 is waiting
+2022/12/31 13:49:47 - Leaving critical section
+2022/12/31 13:49:47 Replying to 8000
+2022/12/31 13:49:47 Replying to 8002
+2022/12/31 13:49:47 Enter | Requesting
+2022/12/31 13:49:47 Enter | Requested 8000
+2022/12/31 13:49:47 Enter | Requested 8002
+2022/12/31 13:49:52 Reply | 8000 replied
+2022/12/31 13:49:52 Request | 8000 is waiting
+2022/12/31 13:49:57 Reply | 8002 replied
+2022/12/31 13:49:57 + Entered critical section
+2022/12/31 13:50:02 - Leaving critical section
+2022/12/31 13:50:02 Replying to 8000
+2022/12/31 13:50:02 Request | 8002 is allowed

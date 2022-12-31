@@ -1,8 +1,0 @@
-2022/12/31 13:34:00 Attempting dial: 8000
-2022/12/31 13:34:00 Attempting dial: 8001
-2022/12/31 13:34:00 Connected to all clients :) Sleeping to allow them to dial to us aswell
-2022/12/31 13:34:06 Enter | Seeking critical section access
-2022/12/31 13:34:06 Enter | Requested from 8000
-2022/12/31 13:34:06 Enter | Requested from 8001
-2022/12/31 13:34:06 Reply | Got reply from id 8001
-2022/12/31 13:34:14 Request | Received request from 8001, appending...

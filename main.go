@@ -16,12 +16,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-// port offset, if program is ran with option 0, then port used is offset+0
-const OFFSET int32 = 8000
-
-// if verbose is false, then programs will only print: requesting CS, joining CS, leaving CS
-// CS = critical section.
-// verbose set to false helps verifying that multiple peers are not in critical section at the same time
 const VERBOSE = true
 
 const (
@@ -61,7 +55,7 @@ type peer struct {
 
 func main() {
 	arg1, _ := strconv.ParseInt(os.Args[1], 10, 32)
-	ownPort := int32(arg1) + OFFSET
+	ownPort := int32(arg1) + 8000
 
 	ctx, cancel := context.WithCancel(context.Background())
 	defer cancel()
@@ -82,7 +76,7 @@ func main() {
 	// Create listener tcp on port ownPort
 	list, err := net.Listen("tcp", fmt.Sprintf(":%v", ownPort))
 	if err != nil {
-		log.Fatalf("Could not listen on port: %v", err)
+		log.Fatalf("Could not listen to port %v: %v", ownPort, err)
 	}
 
 	f := setLog(ownPort)
@@ -93,12 +87,12 @@ func main() {
 
 	go func() {
 		if err := grpcServer.Serve(list); err != nil {
-			log.Fatalf("Failed to serve: %v", err)
+			log.Fatalf("Failed to serve gRPC server over port %v: %v", ownPort, err)
 		}
 	}()
 
 	for i := 0; i < 3; i++ {
-		port := OFFSET + int32(i)
+		port := 8000 + int32(i)
 
 		if port == ownPort {
 			continue
@@ -106,18 +100,18 @@ func main() {
 
 		var conn *grpc.ClientConn
 		if VERBOSE {
-			log.Printf("Attempting dial: %v\n", port)
+			log.Printf("Dialing to %v\n", port)
 		}
 		conn, err := grpc.Dial(fmt.Sprintf(":%v", port), grpc.WithInsecure(), grpc.WithBlock())
 		if err != nil {
-			log.Fatalf("Dial failed: %s", err)
+			log.Fatalf("Could not dial to port %v: %v", port, err)
 		}
 		defer conn.Close()
 		c := RA.NewRAClient(conn)
 		p.clients[port] = c
 	}
 	if VERBOSE {
-		log.Printf("Connected to all clients :) Sleeping to allow them to dial to us aswell\n")
+		log.Printf("Dialing done\n")
 	}
 	// as seen from log message above - this is because if we do not sleep, then the first (or second) client will cause
 	// invalid control flow in the different gRPC functions on last client, since it might not have an active connection to the one dialing it yet
@@ -136,7 +130,7 @@ func main() {
 					p.lamport = msg.lamport
 				}
 				if VERBOSE {
-					log.Printf("Queue | Giving permission to enter critical section to %v\n", msg.id)
+					log.Printf("Replying to %v\n", msg.id)
 				}
 				p.clients[msg.id].Reply(p.ctx, &p.idmsg)
 			}
@@ -148,23 +142,18 @@ func main() {
 		}
 	}()
 
-	// not cryptographically secure, however, it does not need to be - we are only using it so that
-	// the programs dont request access at the same time :)
 	rand.Seed(time.Now().UnixNano() / int64(ownPort))
 	for {
-		// 1/100 chance
 		if rand.Intn(100) == 42 {
 			p.mutex.Lock()
 			p.state = WANTED
 			p.mutex.Unlock()
 			p.enter()
-			// wait for state to be held
 			<-p.held
-			log.Printf("+ Entered critical section\n")
+			log.Printf("Entered critical section\n")
+			// sleep for 5 seconds in critical section
 			time.Sleep(5 * time.Second)
-			log.Printf("- Leaving critical section\n")
-			// fire all of our queued replies, this also sets our state back to released
-			// equivalent to an exit() function :)
+			log.Printf("Leaving critical section\n")
 			p.reply <- true
 		}
 		time.Sleep(50 * time.Millisecond)
@@ -175,7 +164,7 @@ func (p *peer) Request(ctx context.Context, req *RA.Info) (*RA.Empty, error) {
 	p.mutex.Lock()
 	if p.state == HELD || (p.state == WANTED && p.LessThan(req.Id, req.Lamport)) {
 		if VERBOSE {
-			log.Printf("Request | Received request from %v, appending...\n", req.Id)
+			log.Printf("Request | %v is waiting\n", req.Id)
 		}
 		p.queue = append(p.queue, msg{id: req.Id, lamport: req.Lamport})
 	} else {
@@ -183,14 +172,11 @@ func (p *peer) Request(ctx context.Context, req *RA.Info) (*RA.Empty, error) {
 			p.lamport = req.Lamport
 		}
 		p.lamport++
-		// we need the reply to arrive later than request finishing up, which is messy
-		// reply/request could instead have been combined, and then depending on value - the peer
-		// would know whether or not a request succeeded... however, this simplifies logic, since it allows
-		// to *only* count amount of replies we've received to know whether or not we can enter critical section
 		go func() {
-			time.Sleep(10 * time.Millisecond)
+			// sleep a little, to make sure that the other clients have time to add their messages to the queue
+			time.Sleep(5 * time.Millisecond)
 			if VERBOSE {
-				log.Printf("Request | Allowing %v to enter critical section\n", req.Id)
+				log.Printf("Request | %v is allowed\n", req.Id)
 			}
 			p.clients[req.Id].Reply(p.ctx, &p.idmsg)
 		}()
@@ -205,7 +191,6 @@ func (p *peer) LessThan(id int32, lamport uint64) bool {
 	} else if p.lamport > lamport {
 		return false
 	}
-	// if lamport is the same, then go by id instead
 	if p.id < id {
 		return true
 	}
@@ -214,7 +199,7 @@ func (p *peer) LessThan(id int32, lamport uint64) bool {
 
 func (p *peer) Reply(ctx context.Context, req *RA.Id) (*RA.Empty, error) {
 	if VERBOSE {
-		log.Printf("Reply | Got reply from id %v\n", req.Id)
+		log.Printf("Reply | %v replied\n", req.Id)
 	}
 	p.mutex.Lock()
 	p.replies++
@@ -222,8 +207,6 @@ func (p *peer) Reply(ctx context.Context, req *RA.Id) (*RA.Empty, error) {
 		p.state = HELD
 		p.replies = 0
 		p.mutex.Unlock()
-		// this cannot deadlock if no-one is malicious. if however, someone calls reply when we havent requested it
-		// then this will cause issues, since program will not be awaiting on this channel
 		p.held <- true
 	} else {
 		p.mutex.Unlock()
@@ -233,24 +216,24 @@ func (p *peer) Reply(ctx context.Context, req *RA.Id) (*RA.Empty, error) {
 }
 
 func (p *peer) enter() {
-	log.Printf("Enter | Seeking critical section access")
+	log.Printf("Enter | Requesting\n")
 	info := &RA.Info{Id: p.id, Lamport: p.lamport}
 	for id, client := range p.clients {
 		_, err := client.Request(p.ctx, info)
 		if err != nil {
-			log.Printf("something went wrong with id %v\n", id)
+			log.Printf(" Enter | Failed to request from %v: %v\n", id, err)
 		}
 		if VERBOSE {
-			log.Printf("Enter | Requested from %v\n", id)
+			log.Printf("Enter | Requested %v\n", id)
 		}
 	}
 }
 
 func setLog(port int32) *os.File {
 	// Clears the log.txt file when a new server is started
-	filename := fmt.Sprintf("peer(%v)-log.txt", port)
+	filename := fmt.Sprintf("log%d.txt", port)
 	if err := os.Truncate(filename, 0); err != nil {
-		log.Printf("Failed to truncate: %v\n", err)
+		log.Printf("Error truncating file: %v", err)
 	}
 
 	// This connects to the log file/changes the output of the log informaiton to the log.txt file.
